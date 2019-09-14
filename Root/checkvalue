@@ -1,0 +1,72 @@
+import  matplotlib.pyplot as plt
+import numpy as np
+
+
+file_path1 = '/data/Guha/GR/Output/loss_9_AMASS_Transition.txt'
+file_path2 = '/data/Guha/GR/Output/loss_13_AMASS_Transition.txt'
+file_path3 = '/data/Guha/GR/Output/loss_9.txt'
+file_path4 = '/data/Guha/GR/Output/loss_13_s11.txt'
+selected = [0,2,4,6,9,10,11,14,16]
+loss1,loss2, loss3, loss4 = [],[],[],[]
+with open(file_path1, 'r') as file1, open(file_path2, 'r') as file2, open(file_path3, 'r') as file3, open(file_path4, 'r') as file4:
+    for line1,line2,line3,line4 in zip (file1.readlines(),file2.readlines(),file3.readlines(),file4.readlines()):
+        loss1.append(float(line1.split(' ')[1]))
+        loss2.append(float(line2.split(' ')[1]))
+        loss3.append(float(line3.split(' ')[1]))
+        loss4.append(float(line4.split(' ')[1]))
+
+# loss1 = [loss1[i] for i in selected]
+# loss2 = [loss2[i] for i in selected]
+x_ind = np.arange(len(loss1))
+# width = 0.18
+# r1 = np.arange(len(loss1))
+# r2 = [x + width for x in r1]
+# r3 = [x + width for x in r2]
+# r4 = [x + width for x in r3]
+fig, ax = plt.subplots(figsize=(10,7))
+# rects1 = ax.bar(r1, loss1, width, edgecolor='white',label='model:BiRNN',align='edge')
+# rects2 = ax.bar(r2, loss2,  width, edgecolor='white', label='model: MLP',align='edge')
+# rects1 = ax.bar(r3, loss3, width, edgecolor='white',label='DIP:Synthetic',align='edge')
+# rects2 = ax.bar(r4, loss4,  width, edgecolor='white',label='DIP:Fine-tuned',align='edge')
+
+ax.plot(np.arange(len(loss1)),loss1,label='model a: AMASS_Transition',dashes=[4,2], color='brown')
+ax.plot(np.arange(len(loss2)),loss2,label='model b: AMASS_Transition',dashes=[4,2])
+ax.plot(np.arange(len(loss1)),loss3,label='model a: H36')
+ax.plot(np.arange(len(loss2)),loss4,label='model b: H36')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('Mean Pose Error (quaternion)')
+ax.set_xlabel('test activities')
+ax.set_title('comparison of models trained on H36 vs all dataset')
+ax.set_xticks(x_ind)
+#ax.set_xticklabels(('G1', 'G2', 'G3', 'G4', 'G5'))
+ax.legend()
+plt.show()
+
+# loss_file = open('/data/Guha/GR/Output/loss_dip_fine2.txt', 'w')
+# def loss_impl(predicted, expected):
+#     L1 = np.abs(predicted.reshape(-1, 60)) - np.abs(expected.reshape(-1, 60))
+#     return np.mean((np.linalg.norm(L1, 2, 1)))
+#
+# import quaternion
+# SMPL_MAJOR_JOINTS = [1, 2, 3, 4, 5, 6, 9, 12, 13, 14, 15, 16, 17, 18, 19]
+# file_path = '/data/Guha/GR/Output/TestSet/dip_own/test_finetuned.npz'
+# with open(file_path, 'rb') as file:
+#     data_dict = dict(np.load(file))
+#     gt_list = data_dict['gt']
+#     pred_list = data_dict['prediction']
+#
+#     for act in range(18):
+#         gt = gt_list[act].reshape(-1,24,3)
+#         pred = pred_list[act].reshape(-1, 24,3)
+#
+#         pred = pred[:, SMPL_MAJOR_JOINTS, :]
+#         pred = quaternion.as_float_array(quaternion.from_rotation_vector(pred))
+#
+#         gt = gt[:, SMPL_MAJOR_JOINTS, :]
+#         gt = quaternion.as_float_array(quaternion.from_rotation_vector(gt))
+#
+#         loss = loss_impl(pred, gt)
+#         loss_file.write('{}-- {}\n'.format(act, loss))
+#
+#     loss_file.close()
