@@ -3,6 +3,7 @@ import torch.nn as nn
 import Config as cfg
 
 
+############# BiRNN network - random stateless ###############
 class BiRNN(nn.Module):
     def __init__(self):
         super(BiRNN,self).__init__()
@@ -39,6 +40,7 @@ class BiRNN(nn.Module):
 
         return fc_out
 
+############# BiRNN network - sequential stateful ###############
 class BiLSTM(nn.Module):
     def __init__(self):
         super(BiLSTM,self).__init__()
@@ -61,6 +63,7 @@ class BiLSTM(nn.Module):
         fc_out = self.post_fc(lstm_out)
         return fc_out,hidden,cell
 
+############# MLP predicting orientation from pose ###############
 class ForwardKinematic(nn.Module):
     def __init__(self):
         super(ForwardKinematic,self).__init__()
@@ -71,7 +74,7 @@ class ForwardKinematic(nn.Module):
     def forward(self, input):
         out = self.net(input)
         return out
-
+############# MLP predicting pose from orientation ###############
 class InverseKinematic(nn.Module):
     def __init__(self):
         super(InverseKinematic,self).__init__()
@@ -81,74 +84,3 @@ class InverseKinematic(nn.Module):
     def forward(self, input):
         out = self.net(input)
         return out
-
-class Encoder(nn.Module):
-    def __init__(self, input_dim, hid_dim, n_layers, dropout):
-        super(Encoder).__init__()
-
-        self.input_dim = input_dim
-        self.hid_dim = hid_dim
-        self.n_layers = n_layers
-        self.dropout = dropout
-
-
-        self.rnn = nn.LSTM(input_dim, hid_dim, n_layers, batch_first=True, dropout=dropout,bidirectional=True)
-
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, src):
-        # src = [ batch size, seq len, input dim]
-
-        outputs, (hidden, cell) = self.rnn(src)
-
-        # outputs = [src sent len, batch size, hid dim * n directions]
-        # hidden = [n layers * n directions, batch size, hid dim]
-        # cell = [n layers * n directions, batch size, hid dim]
-
-        # outputs are always from the top hidden layer
-        return hidden, cell
-
-
-class Decoder(nn.Module):
-    def __init__(self, output_dim, emb_dim, hid_dim, n_layers, dropout):
-        super(Decoder).__init__()
-
-        self.hid_dim = hid_dim
-        self.output_dim = output_dim
-        self.n_layers = n_layers
-        self.dropout = dropout
-
-        self.rnn = nn.LSTM(output_dim, hid_dim, n_layers, batch_first=True, dropout=dropout,bidirectional=True)
-
-        self.fc = nn.Linear(hid_dim, output_dim)
-
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, input, hidden, cell):
-        # input = [batch size]
-        # hidden = [n layers * n directions, batch size, hid dim]
-        # cell = [n layers * n directions, batch size, hid dim]
-
-        # n directions in the decoder will both always be 1, therefore:
-        # hidden = [n layers, batch size, hid dim]
-        # context = [n layers, batch size, hid dim]
-
-        input = input.unsqueeze(0)
-
-        # input = [batch size , 1, output_dim ]
-        output, (hidden, cell) = self.rnn(input, (hidden, cell))
-
-        # output = [sent len, batch size, hid dim * n directions]
-        # hidden = [n layers * n directions, batch size, hid dim]
-        # cell = [n layers * n directions, batch size, hid dim]
-
-        # sent len and n directions will always be 1 in the decoder, therefore:
-        # output = [1, batch size, hid dim]
-        # hidden = [n layers, batch size, hid dim]
-        # cell = [n layers, batch size, hid dim]
-
-        prediction = self.out(output.squeeze(0))
-
-        # prediction = [batch size, output dim]
-
-        return prediction, hidden, cell

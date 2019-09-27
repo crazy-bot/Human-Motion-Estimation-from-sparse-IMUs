@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 SMPL_MAJOR_JOINTS = [1, 2, 3, 4, 5, 6, 9, 12, 13, 14, 15, 16, 17, 18, 19]
 SMPL_NR_JOINTS = 24
 
+########### these are chain of child to parent till root
 parentJointsDict = {
 'L_Elbow': [16,13,9,6,3,0],
 'R_Elbow': [17,14,9,6,3,0],
@@ -18,6 +19,7 @@ parentJointsDict = {
 'Pelvis' : []
 }
 
+############ SMPL bone indexes #############
 boneSMPLDict = { 'Pelvis' : 0,
                 'L_Hip': 1,
                 'R_Hip': 2,
@@ -43,6 +45,7 @@ boneSMPLDict = { 'Pelvis' : 0,
                 'L_Hand': 22,
                 'R_Hand': 23
                  }
+################# IPOSE parameters taken from DIP_IMU file ##################
 Ipose = np.asarray([0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 2.40190000e-02,
                     -5.65980000e-02, -6.00000000e-02, 4.01920000e-03, 1.07109000e-01,
                     4.00000000e-02, -6.85148000e-02, 2.97456624e-02, 0.00000000e+00,
@@ -86,8 +89,8 @@ def smpl_reduced_to_full(smpl_reduced):
             smpl_full[:, idx * dof:(idx + 1) * dof] = np.reshape(identity, [-1, dof])
     return smpl_full
 
+# Input frames are in shape (no_of_frames, no_of_joints * 4)
 def quat_to_aa_representation(frames,no_of_joints):
-
     aa_angles = []
     out = frames.reshape(-1, no_of_joints, 4)
     for seq in range(out.shape[0]):
@@ -113,6 +116,7 @@ def rot_matrix_to_aa(data):
             data_c[i, j] = np.ravel(cv2.Rodrigues(data_r[i, j])[0])
     return np.reshape(data_c, [seq_length, n_joints * 3])
 
+# this method is called during calibration
 def getGlobalBoneOriFromPose(pose,boneNameList):
     pose = pose.reshape(1,15*3*3)
     fullPose = smpl_reduced_to_full(pose).reshape(24,3,3)
@@ -264,6 +268,3 @@ def parseJson():
             rawOri[m_rows, m_cols] = rawOri[(m_rows - 1), m_cols]
 
         return rawOri
-
-if __name__ == '__main__':
-    plotGraph()

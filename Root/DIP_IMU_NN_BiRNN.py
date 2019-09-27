@@ -6,6 +6,7 @@ import numpy as np
 from pyquaternion import Quaternion
 import  itertools
 
+################# short BiRNN network
 class BiRNN(nn.Module):
     def __init__(self):
         super(BiRNN,self).__init__()
@@ -41,11 +42,14 @@ class BiRNN(nn.Module):
         fc_out = self.post_fc(lstm_out)
         return fc_out
 
+############ custom loss functiom
 def _loss_impl(predicted, expected):
     L1 = predicted - expected
     return torch.mean((torch.norm(L1, 2, 2)))
 
+############# prepare batch from provided calibrated DIP_IMU data into our desired format
 def preparedata(path,batch_sz):
+    # by default sequence length was 300
     seq_len = 300
     data_dict = dict(np.load(path, encoding='latin1'))
     oriList = data_dict['orientation']
@@ -61,6 +65,8 @@ def preparedata(path,batch_sz):
         pose_quat = np.asarray([Quaternion(matrix=pose[k, j, :, :]).elements for k, j in
                                 itertools.product(range(pose.shape[0]), range(15))])
         pose_quat = pose_quat.reshape(-1, 15 * 4)
+
+        # when orientation read from the file is less tham 300 sequence length we mask it to have same size data in the batch
         if (len(ori_quat) != seq_len):
             mask_ori = np.repeat(Quaternion(matrix=np.eye(3, 3)).elements[np.newaxis, ...], 5, axis=0)
             mask_ori = np.array([mask_ori] * seq_len).reshape(seq_len, -1)
@@ -165,6 +171,7 @@ def train(basepath):
     f.close()
     plotGraph(epoch_loss,basepath)
 
+############ method for plotting graph of training loss and validation loss
 def plotGraph(epoch_loss,basepath):
     import  matplotlib.pyplot as plt
     fig = plt.figure(1)

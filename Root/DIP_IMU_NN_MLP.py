@@ -41,8 +41,6 @@ def preparedata(path):
         batch_ori.append(ori_quat)
         batch_pose.append(pose_quat)
 
-    # random.shuffle(batch_ori)
-    # random.shuffle(batch_pose)
     return batch_ori,batch_pose
 
 def train(basepath):

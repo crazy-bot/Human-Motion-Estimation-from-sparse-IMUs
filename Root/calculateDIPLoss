@@ -1,0 +1,54 @@
+""" this file calculates per joint per frame loss in euler angle degrees of provided DIP_model from generated npz files by run_evaluation file of DIP_IMU
+"""
+
+
+
+import  matplotlib.pyplot as plt
+import numpy as np
+import transforms3d
+import itertools
+
+########## loss file to save data
+loss_file = open('/data/Guha/GR/Output/loss_dipsynthetic.txt', 'w')
+
+########### calculates mean square error per joint per frame ############
+def loss_impl(predicted, expected):
+    error = predicted - expected
+    error_norm = np.linalg.norm(error, axis=2)
+    error_per_joint = np.mean(error_norm,axis=1)
+    error_per_frame_per_joint = np.mean(error_per_joint, axis=0)
+    return error_per_frame_per_joint
+
+import quaternion
+SMPL_MAJOR_JOINTS = [1, 2, 3, 4, 5, 6, 9, 12, 13, 14, 15, 16, 17, 18, 19]
+file_path = '/data/Guha/GR/Output/TestSet/dip_own/test_synthetic.npz'
+with open(file_path, 'rb') as file:
+    data_dict = dict(np.load(file))
+    gt_list = data_dict['gt']
+    pred_list = data_dict['prediction']
+
+    for act in range(18):
+        ######### read grount truth and prediction for each activity ##############
+        gt = gt_list[act].reshape(-1,24,3)
+        pred = pred_list[act].reshape(-1, 24,3)
+        seq_len = len(pred)
+
+        ############# convert prediction given in axis-angle to euler angle
+        pred_aa = pred[:, SMPL_MAJOR_JOINTS, :]
+        pred_quat = quaternion.as_float_array(quaternion.from_rotation_vector(pred_aa))
+        pred_euler = np.asarray([transforms3d.euler.quat2euler(pred_quat[k,j]) for k, j in
+                                itertools.product(range(seq_len), range(15))])
+        pred_euler = (pred_euler * 180)/ np.pi
+
+        ############# convert ground truth given in axis-angle to euler angle
+        gt_aa = gt[:, SMPL_MAJOR_JOINTS, :]
+        gt_quat = quaternion.as_float_array(quaternion.from_rotation_vector(gt_aa))
+        gt_euler = np.asarray([transforms3d.euler.quat2euler(gt_quat[k, j]) for k, j in
+                                 itertools.product(range(seq_len), range(15))])
+        gt_euler = (gt_euler * 180) / np.pi
+
+        ########### calculate loss and store in file
+        loss = loss_impl(pred_euler.reshape(seq_len,15,3), gt_euler.reshape(seq_len,15,3))
+        loss_file.write('{}-- {}\n'.format(act, loss))
+
+    loss_file.close()

@@ -7,10 +7,11 @@ import torch
 import Config as cfg
 import itertools
 from pyquaternion import Quaternion
+import transforms3d
 
 class TestEngine:
     def __init__(self):
-        self.testSet = ['AMASS_Transition']
+        self.testSet = ['s_11']
         self.datapath = '/data/Guha/GR/Dataset.old/'
         self.test_dataset = IMUDataset(self.datapath,self.testSet)
         self.use_cuda =True
@@ -18,7 +19,7 @@ class TestEngine:
         #self.testModel = BiLSTM().cuda()
 
         modelPath = '/data/Guha/GR/model/9/validation.pth.tar'
-        self.base = '/data/Guha/GR/Output/TestSet/9/'
+        self.base = '/data/Guha/GR/Output/TestSet/8/'
         with open(modelPath , 'rb') as tar:
             checkpoint = torch.load(tar)
             model_weights = checkpoint['state_dict']
@@ -62,11 +63,12 @@ class TestEngine:
         #np.savez_compressed(self.base + f.split('/')[-1], target=target.cpu().numpy(), predictions=prediction)
         print(f, '------------', loss.item())
 
+##################### read one file and return input and target values
     def readfile(self, file):
         data_dict = np.load(file, encoding='latin1')
         sample_pose = data_dict['pose'].reshape(-1, 15, 3, 3)
         sample_ori = data_dict['ori']
-#        sample_acc = data_dict['acc']
+        sample_acc = data_dict['acc']
         seq_len = sample_pose.shape[0]
 
         #################### convert orientation matrices to quaternion ###############
@@ -84,7 +86,7 @@ class TestEngine:
         pose_quat = np.asarray([Quaternion(matrix=sample_pose[k, j, :, :]).elements for k, j in
                                 itertools.product(range(seq_len), range(15))])
 
-        pose_quat = pose_quat.reshape(-1, 15 * 4)
+        pose_quat = pose_quat.reshape(-1, 15 ,4)
         #################### standardize acceleration #################
         ################# To normalize acceleration ###################
         # imu_dip = dict(
@@ -93,8 +95,8 @@ class TestEngine:
         # acc_stats = data_stats['acceleration']
         # sample_acc = sample_acc.reshape(-1, 5 * 3)
         # sample_acc = (sample_acc - acc_stats['mean_channel']) / acc_stats['std_channel']
-
-        #concat = np.concatenate((ori_quat, sample_acc), axis=1)
+        #
+        # concat = np.concatenate((ori_quat, sample_acc), axis=1)
 
         self.input = ori_quat
         self.target = pose_quat
@@ -103,7 +105,7 @@ class TestEngine:
         # initialize hidden and cell state  at each new batch
         hidden = torch.zeros(cfg.n_layers * 2, 1, cfg.hid_dim, dtype=torch.double).cuda()
         cell = torch.zeros(cfg.n_layers * 2, 1, cfg.hid_dim, dtype=torch.double).cuda()
-        loss_file = open('/data/Guha/GR/Output/loss_9_AMASS_Transition.txt', 'w')
+        loss_file = open('/data/Guha/GR/Output/loss/loss_9_H36.txt', 'w')
         # loop through all the files
         for ct,f in enumerate(self.test_dataset.files):
             #f = '/data/Guha/GR/Dataset/DIP_IMU2/test/s_10_05.npz'
@@ -135,10 +137,20 @@ class TestEngine:
             norms = np.linalg.norm(predictions, axis=2)
             predictions = np.asarray(
                 [predictions[k, j, :] / norms[0, 0] for k, j in itertools.product(range(seq_len), range(15))])
+            predictions = predictions.reshape(seq_len,15,4)
+            ################### convert to euler
+            target_euler = np.asarray([transforms3d.euler.quat2euler(target[k, j]) for k, j in
+                                   itertools.product(range(seq_len), range(15))])
+            target_euler = (target_euler * 180) / np.pi
+            pred_euler = np.asarray([transforms3d.euler.quat2euler(predictions[k, j]) for k, j in
+                                       itertools.product(range(seq_len), range(15))])
+            pred_euler = (pred_euler * 180) / np.pi
             ##################calculate loss
-            loss  = self._loss_impl(predictions,target)
-            loss_file.write('{}-- {}\n'.format(f,loss))
-            print(f+'-------'+str(loss))
+            loss  = self.loss_impl(target_euler.reshape(-1,15,3),pred_euler.reshape(-1,15,3))
+            #loss_file.write('{}-- {}\n'.format(f,loss))
+            #print(f+'-------'+str(loss))
+            print(f + '-------' + str(loss))
+            loss_file.write('{}\n'.format(loss))
             # save GT and prediction
             #np.savez_compressed(self.base + f.split('/')[-1], target=target, predictions=predictions)
             #print(f)
@@ -146,9 +158,12 @@ class TestEngine:
                 break
         loss_file.close()
 
-    def _loss_impl(self, predicted, expected):
-        L1 = predicted.reshape(-1,60) - expected.reshape(-1,60)
-        return np.mean((np.linalg.norm(L1, 2, 1)))
+    def loss_impl(self,predicted, expected):
+        error = predicted - expected
+        error_norm = np.linalg.norm(error, axis=2)
+        error_per_joint = np.mean(error_norm, axis=1)
+        error_per_frame_per_joint = np.mean(error_per_joint, axis=0)
+        return error_per_frame_per_joint
 
 if __name__ == '__main__':
     testEngine = TestEngine()

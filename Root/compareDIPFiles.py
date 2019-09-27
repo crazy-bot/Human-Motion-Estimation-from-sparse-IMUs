@@ -50,14 +50,19 @@ rn2.vc = LambertianPointLight(
     light_pos=np.array([-1000, -1000, -2000]),
     vc=np.ones_like(m2) * .9,
     light_color=np.array([1., 1., 1.]))
+####################################### finish of adapting SMPL python initialization ########################
 
 ####################################### read the two files #############################
+
+############### raw file
 DIPPath = '/data/Guha/GR/DIPIMUandOthers/DIP_IMU_and_Others/DIP_IMU/s_10'
 imu_order = ['head', 'spine2', 'belly', 'lchest', 'rchest', 'lshoulder', 'rshoulder', 'lelbow', 'relbow', 'lhip', 'rhip', 'lknee', 'rknee', 'lwrist', 'lwrist', 'lankle', 'rankle']
 SENSORS = [ 'lknee', 'rknee','lelbow', 'relbow', 'head','belly']
 SMPL_SENSOR = ['L_Knee','R_Knee','L_Elbow','R_Elbow','Head','Pelvis']
 sensor_idx = [11,12,7,8,0,2]
 
+
+############# calirated file
 SMPL_MAJOR_JOINTS = [1, 2, 3, 4, 5, 6, 9, 12, 13, 14, 15, 16, 17, 18, 19]
 file_path1 = '/data/Guha/GR/code/dip18/train_and_eval/data/dipIMU/imu_own_validation.npz'
 file_path2 = '/data/Guha/GR/DIPIMUandOthers/DIP_IMU_and_Others/DIP_IMU/s_10'

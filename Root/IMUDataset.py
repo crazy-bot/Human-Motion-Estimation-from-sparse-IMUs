@@ -9,9 +9,6 @@ import Config as cfg
 
 class IMUDataset():
 
-    def __init__(self):
-        print('dataset')
-
     def __init__(self,rootdir):
 
         self.total_frames = 0
@@ -65,8 +62,9 @@ class IMUDataset():
 
         return filepaths[1:]
 
-    def prepareBatch_quat2(self):
 
+############# prepare batch in quaternion #################
+    def prepareBatch_quat2(self):
         self.input = []
         self.target = []
         # act_idx: index of activities of one batch
@@ -74,13 +72,14 @@ class IMUDataset():
         for idx in act_idx:
             data_dict =  np.load(self.files[idx], encoding='latin1')
             seq_len = data_dict['pose'].shape[0]
-
+            # when length of activity is more than 200 we select 200 frames starting from any position randomly
             if (seq_len > cfg.seq_len):
                 # get any random sequence of frames of size cfg.seq_len of the activity
                 start_idx = np.random.choice(data_dict['pose'].shape[0] - cfg.seq_len)
                 sample_pose = data_dict['pose'][start_idx: start_idx + cfg.seq_len]
                 sample_ori = data_dict['ori'][start_idx: start_idx + cfg.seq_len]
                 sample_acc = data_dict['acc'][start_idx: start_idx + cfg.seq_len]
+            # when length of activity is less than 200 mask it and make size of 200
             else:
                 identity_pose = np.repeat(np.eye(3, 3)[np.newaxis, ...], 15, axis=0)
                 identity_ori = np.repeat(np.eye(3, 3)[np.newaxis, ...], 5, axis=0)
@@ -100,10 +99,6 @@ class IMUDataset():
                                    itertools.product(range(sample_pose.shape[0]), range(15))])
             pose_quat = pose_quat.reshape(-1,15*4)
 
-            # pose_euler = np.asarray([transforms3d.euler.mat2euler(sample_pose[k, j, :, :],'szyx') for k, j in
-            #                          itertools.product(range(cfg.seq_len), range(15))])
-            # pose_euler = pose_euler.reshape(-1, 45)
-
             ################ normalize acceleration ###################
             # sample_acc[:,:,0] = (sample_acc[:,:,0] - np.min(sample_acc[:,:,0])) / (np.max(sample_acc[:,:,0])-np.min(sample_acc[:,:,0]))
             # sample_acc[:, :, 1] = (sample_acc[:,:,1] - np.min(sample_acc[:,:,1])) / (np.max(sample_acc[:,:,1])-np.min(sample_acc[:,:,1]))
@@ -121,6 +116,7 @@ class IMUDataset():
         self.input = np.asarray(self.input)
         self.target = np.asarray(self.target)
 
+############### prepare batch in euler ################
     def prepareBatch_euler2(self):
 
         self.input = []
@@ -166,6 +162,7 @@ class IMUDataset():
         self.input = np.asarray(self.input)
         self.target = np.asarray(self.target)
 
+    ############### prepare batch in quaternion variant ################
     def prepareBatch_quat(self,batch_no):
 
         inputs = []
@@ -222,6 +219,7 @@ class IMUDataset():
         self.input = torch.stack(self.input)
         self.target = torch.stack(self.target)
 
+
     def prepareBatchOfMotion(self, batch_sz):
         inputs = []
         targets = []
@@ -271,6 +269,7 @@ class IMUDataset():
             self.input = torch.stack(self.input)
             self.target = torch.stack(self.target)
 
+    ############### prepare batch in euler variant ################
     def prepareBatch_euler(self):
 
         self.input = []
@@ -306,6 +305,8 @@ class IMUDataset():
 
         # self.input = np.asarray(self.input)
         # self.target = np.asarray(self.target)
+
+# create batch random without replacement
     def createbatch_no_replacement(self):
         self.input = []
         self.target = []
@@ -337,7 +338,7 @@ class IMUDataset():
         self.input = np.asarray(self.input)
         self.target = np.asarray(self.target)
 
-
+##### load all files in the dataset
     def loadfiles(self,datapath,trainset):
         listofPath = []
 
@@ -349,7 +350,7 @@ class IMUDataset():
         return listofPath
 
 
-
+########## read one single file
     def readfile(self, file):
         data_dict = np.load(file, encoding='latin1')
         sample_pose = data_dict['pose'].reshape(-1,15,3,3)

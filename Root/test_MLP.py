@@ -4,6 +4,7 @@ from IMUDataset import  IMUDataset
 import torch
 import Config as cfg
 import itertools
+import  transforms3d
 
 class TestEngine:
     def __init__(self):
@@ -33,15 +34,33 @@ class TestEngine:
                 #file = '/data/Guha/GR/Dataset.old/s_11/S11_WalkTogether.npz'
                 self.dataset.readfile(file)
                 input = torch.FloatTensor(self.dataset.input)
+                seq_len = len(input)
                 target = torch.FloatTensor(self.dataset.target)
+                target = target.reshape(seq_len,15,4)
                 if self.use_cuda:
                     input = input.cuda()
 
-                prediction = self.testModel(input)
-                prediction = prediction.detach().reshape_as(target).cpu()
-                #loss = torch.norm((prediction-target), 2, 1)
-                loss = self._loss_impl(prediction, target)
-                loss_file.write('{}-- {}\n'.format(file, loss))
+                predictions = self.testModel(input)
+
+                ################## Renormalize prediction
+                predictions = predictions.detach().reshape_as(target).cpu()
+                predictions = np.asarray(predictions)
+                norms = np.linalg.norm(predictions, axis=2)
+                predictions = np.asarray(
+                    [predictions[k, j, :] / norms[0, 0] for k, j in itertools.product(range(seq_len), range(15))])
+                predictions = predictions.reshape(seq_len, 15, 4)
+
+                ################### convert to euler
+                target_euler = np.asarray([transforms3d.euler.quat2euler(target[k, j]) for k, j in
+                                           itertools.product(range(seq_len), range(15))])
+                target_euler = (target_euler * 180) / np.pi
+                pred_euler = np.asarray([transforms3d.euler.quat2euler(predictions[k, j]) for k, j in
+                                         itertools.product(range(seq_len), range(15))])
+                pred_euler = (pred_euler * 180) / np.pi
+
+
+                loss = self.loss_impl(pred_euler.reshape(-1,15,3), target_euler.reshape(-1,15,3))
+                loss_file.write('{}\n'.format(loss))
                 # mean_loss = torch.mean(loss)
                 # max_loss = torch.max(loss)
                 # dset_loss.extend(loss.numpy())
@@ -52,9 +71,12 @@ class TestEngine:
 
         loss_file.close()
 
-    def _loss_impl(self, predicted, expected):
-        L1 = predicted - expected
-        return torch.mean((torch.norm(L1, 2, 1)))
+    def loss_impl(self, predicted, expected):
+        error = predicted - expected
+        error_norm = np.linalg.norm(error, axis=2)
+        error_per_joint = np.mean(error_norm, axis=1)
+        error_per_frame_per_joint = np.mean(error_per_joint, axis=0)
+        return error_per_frame_per_joint
 
 if __name__ == '__main__':
     testEngine = TestEngine()
