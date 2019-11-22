@@ -5,6 +5,6 @@ For the full report of my guided research kindly see here [Deep Learning Precise
 ### Dataset
 Data can be downloaded from - http://dip.is.tue.mpg.de/downloads
 ### Results
-![alt text](output/S11_WalkTogether_pred_model8.mp4)
+![alt text](output/8 vs 9.png)
 
 
