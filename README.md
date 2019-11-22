@@ -6,4 +6,4 @@ For the full report of my guided research kindly see here [Deep Learning Precise
 Data can be downloaded from - http://dip.is.tue.mpg.de/downloads
 ### Results
 some of the qualitative results are given below
-(output/2.2.png)
+![](output/2.2.png)
