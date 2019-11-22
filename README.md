@@ -1,6 +1,7 @@
 # human-pose
 This file is to give a brief overview of each file included in this project.
 For the full report kindly see here [Deep Learning Precise 3D Human Pose from Sparse IMUs](Reports/GR_report.pdf)
+
 File description:
 1. analyseData:
     • reads raw orientation from syntehtic and DIP_IMU
