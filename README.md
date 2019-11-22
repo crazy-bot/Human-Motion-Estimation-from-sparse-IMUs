@@ -7,5 +7,8 @@ Data can be downloaded from - http://dip.is.tue.mpg.de/downloads
 ### Results
 some of the qualitative results are given below
 ![output](output/2.2.PNG)![output](output/2.4.PNG)![output](output/3_5.PNG)![output](mergeourdip/2.2.PNG)
+
 some of the quantitave comparisons are given below
-![output](output/approaches.png)![output](output/onevsall.PNG)![output](output/alldipmodel.PNG)
+![output](output/approaches.png)
+![output](output/onevsall.png)
+![output](output/alldipmodel.png)
