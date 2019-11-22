@@ -5,4 +5,5 @@ For the full report of my guided research kindly see here [Deep Learning Precise
 ### Dataset
 Data can be downloaded from - http://dip.is.tue.mpg.de/downloads
 ### Results
-![alt text](output/8vs9.png)
+some of the qualitative results are given below
+(output/2.2.png)
