@@ -1,0 +1,31 @@
+human-pose
+
+This file is to give a brief overview of each file included in this project.
+
+File description:
+
+    analyseData: • reads raw orientation from syntehtic and DIP_IMU • reads ground truth pose from syntehtic and DIP_IMU • reads calibrated orientation from prepared syntehtic and DIP_IMU dataset • visualize data distribution in boxplot
+    calculateDIpLoss: • calculates per joint per frame loss in euler angle degrees of provided DIP_model from generated npz files by run_evaluation file of DIP_IMU • saves the losses in text file
+    compareDIPFiles: • reads DIP_IMU_nn • reads DIP_IMU and calibrate according to our 1st understanding • compare values between the above two
+    Config: • contains common configuration parameters used by multiple files
+    createData: • calibrates DIP_IMU raw data following 1st approach • save them in separate files per activity
+    DIP_calib_BiRNN: • training of short LSTM on our calibrated DIP_IMU
+    eval_dip_nn: • evaluate own trained model on DIP_IMU_nn data • use testWindow method to evaluate Short BiLSTM • use test method to evaluate MLP
+    eval_model: • evaluate all BiLSTM model trained on synthetic data
+    eval_ori_pose: • evaluate forward kinematic • get predicted orientation • feed results of forward kinematic to get pose from trained model
+    IMUDataset: • reads data from generated calibrated files • multiple methods to create batch as and when required based on different strategies – to be called during training • read single file – to be called during test
+    myUtil: • contains some generic utility methods
+    Network: • contains the architectures of different network as experimented
+    new_createData: • calibrates DIP_IMU raw data following last approach • save them in separate files per activity
+    new_prepareData: • calibrates synthetic raw data following last approach • save them in separate files per activity in separate folders for different datasets
+    parseJson - • parse json files • calibrate data and store in desired format • It was written to process our own recordings
+    plotGraph – • generate figures given in the report from loss files
+    prepareData- • calibrates synthetic raw data following first approach • save them in separate files per activity in separate folders for different datasets
+    saveVideo - • creates video from frames stored in a folder • used to create video of activities for target and prediction
+    test_MLP- • tests trained MLP model • datapath and modelpath need to be specified in the file as required
+    train_BiLSTM - • trains RNN model with sequential stateful strategy
+    train_BiRNN- • trains RNN model with random stateless strategy
+    train_BiRNN_Full- • trains RNN model with random stateless strategy on multiple datasets
+    train_MLP- • trains MLP model
+    visualize _<dip/DFKI/>- • visualize result generated from eval_model • uses SMPL python package dependencies • it also can store the frames for making video by saveVideo file.
+
